@@ -1,0 +1,54 @@
+# Bullet Game, deployed on its own: the Telegram bot and the page at
+# /bullet/ on a ZVM gateway. Nothing here belongs to another repository. The
+# bot reaches the chain through the JSON-RPC .env names (ZVM_RPC), as any
+# outside client does, and the devnet's gateway forwards /bullet/* to the web
+# service below.
+#
+#   docker compose up -d --build
+#
+# Every setting is in .env beside this file (copy .env.example). The key file
+# in secrets/ is the escrow's owner: whoever holds it can stake any connected
+# player's BULLET, so it is random, secret, and out of git and the image.
+name: zvm-bullet
+
+services:
+  # Outbound only: it long-polls Telegram and calls the node; nothing dials in.
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zvm-bullet:latest
+    container_name: zvm-bullet-bot
+    restart: unless-stopped
+    command: [bot]
+    env_file:
+      - path: .env
+        required: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # BULLET_KEYS in .env names this path.
+      - ./secrets/bullet.json:/run/secrets/bullet.json:ro
+      # What `zvm-bullet deploy` wrote; kept out of git and out of the image.
+      - ./deployments/zvm.json:/etc/zvm-bullet/zvm.json:ro
+      # Who is connected to which wallet, and every game: /leaderboard's
+      # history. The chain holds the money, so losing this loses no BULLET.
+      - data:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_BULLET_BOT: ${VITE_BULLET_BOT:-}
+        VITE_GATEWAY: ${VITE_GATEWAY:-}
+    image: zvm-bullet-web:latest
+    container_name: zvm-bullet-web
+    restart: unless-stopped
+    # Loopback only: the devnet's gateway reaches it as host.docker.internal:47601,
+    # and nothing else needs to.
+    ports:
+      - "127.0.0.1:47601:80"
+
+volumes:
+  data:

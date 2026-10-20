@@ -1,0 +1,9 @@
+bin/
+contracts/node_modules/
+*.db
+*.db-*
+deployments/*.log
+.env
+secrets/
+web/node_modules/
+web/dist/

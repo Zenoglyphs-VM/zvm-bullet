@@ -1,0 +1,17 @@
+# Serves the built page. The caching rules are the page's own, so they live
+# here rather than in zvm's gateway, which only forwards /bullet/*.
+:80 {
+	root * /srv
+	redir /bullet /bullet/ 308
+
+	# Hashed names never change, so they can be kept for good.
+	@assets path /bullet/assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	# index.html names this build's hashed assets, so it must not outlive it.
+	@shell path /bullet/ /bullet/index.html
+	header @shell Cache-Control "no-cache"
+
+	# One page, so anything under it that is not a file is that page.
+	try_files {path} /bullet/index.html
+	file_server
+}

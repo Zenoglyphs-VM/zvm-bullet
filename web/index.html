@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#06090a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7faf9" media="(prefers-color-scheme: light)" />
+    <title>Bullet Game</title>
+    <meta name="description" content="Russian Roulette in Telegram, played for BULLET on the ZVM: how to play, the tokenomics, the fairness proof and the contract addresses." />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <script>
+      // The explorer's theme key, so a visitor's choice follows them here.
+      try {
+        var t = localStorage.getItem('zvm.theme')
+        if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <!-- Every name in double braces is filled at build time from deployments/zvm.json and
+         VITE_BULLET_BOT (vite.config.ts), so each link is a real one in the
+         served HTML rather than a "#" that waits for a script. -->
+    <header class="top">
+      <div class="wrap top-row">
+        <a class="brand" href="./">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="6.6" r="1.9" fill="currentColor"/><circle cx="16.7" cy="9.3" r="1.9" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="16.7" cy="14.7" r="1.9" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="17.4" r="1.9" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7.3" cy="14.7" r="1.9" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7.3" cy="9.3" r="1.9" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span>Bullet Game</span>
+        </a>
+        <nav class="links">
+          <a href="#play">Play</a>
+          <a href="#tokenomics">Tokenomics</a>
+          <a href="#provably-fair">Fairness</a>
+          <a href="#addresses">Addresses</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap" id="bullet">
+      <section class="hero">
+        <p class="ledger">On the ZVM, chain 69</p>
+        <h1>Russian Roulette in Telegram.</h1>
+        <p class="lede">
+          One bullet, one revolver, passed round the table. Whoever fires the bullet loses their stake to the survivors.
+          Stakes are in <b>BULLET</b>, held by an escrow contract for the length of the game: the original Ethereum contracts,
+          redeployed on the ZVM.
+        </p>
+        <div class="actions">
+          <a class="btn btn-plasma" href="https://t.me/{{bot}}">Open @{{bot}}</a>
+          <a class="btn" href="{{buy}}">Buy BULLET</a>
+        </div>
+      </section>
+
+      <section class="card" id="play">
+        <h2>Play</h2>
+        <ol class="steps">
+          <li>DM <a href="https://t.me/{{bot}}">@{{bot}}</a> <code>/connect</code>. It replies with a secret number.</li>
+          <li>Call <code>connectAndApprove(secret)</code> on the <a href="{{tokenWrite}}">BULLET contract's Write tab</a>, then send the bot the transaction hash.</li>
+          <li><a href="{{buy}}">Buy BULLET</a> with ZNN; the <a href="{{gw}}/glyphswap/faucet">faucet</a> hands out devnet ZNN.</li>
+          <li>In the group, <code>/roulette 6 50</code> starts a six-chamber game at 50 BULLET; <code>/join</code> takes a seat.</li>
+          <li><code>/pull</code> to fire, <code>/pass</code> to hand on. <code>/leaderboard</code> ranks the group.</li>
+        </ol>
+        <ul class="plain">
+          <li>A game waits two minutes or until every chamber has a player, and needs two.</li>
+          <li><code>/join 75</code> bets above the minimum, capped at what the rest of the table staked.</li>
+          <li>You must pull once before you may pass. Idle for 30 seconds and the bot pulls for you.</li>
+          <li>If every player votes <code>/stop</code>, every stake is refunded.</li>
+        </ul>
+      </section>
+
+      <section class="card" id="tokenomics">
+        <h2>Tokenomics</h2>
+        <div class="split">
+          <div>
+            <h3>10,000,000 supply</h3>
+            <dl class="rows">
+              <div><dt>Liquidity pool</dt><dd>90%</dd></div>
+              <div><dt>Marketing</dt><dd>10%</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3>5% tax on buys and sells</h3>
+            <dl class="rows">
+              <div><dt>To liquidity</dt><dd>2%</dd></div>
+              <div><dt>Sold for ZNN, for gas</dt><dd>2%</dd></div>
+              <div><dt>Revenue share</dt><dd>1%</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3>A loser's stake</h3>
+            <dl class="rows">
+              <div><dt>To the survivors</dt><dd>90%</dd></div>
+              <div><dt>Revenue share</dt><dd>9%</dd></div>
+              <div><dt>Burned</dt><dd>1%</dd></div>
+            </dl>
+          </div>
+        </div>
+        <p class="note">Wallet-to-wallet transfers are untaxed. Ownership is renounced, so none of this can change.</p>
+      </section>
+
+      <section class="card" id="provably-fair">
+        <h2>Provably fair</h2>
+        <p>
+          The chamber is drawn with a VRF when the game starts, committed in <code>newGame</code>, and everything needed to check
+          it is revealed in <code>endGame</code>.
+        </p>
+        <pre class="block"><span class="k">alpha</span>   = "&lt;unix seconds&gt;.&lt;microseconds&gt;,[bet1, bet2, ...]"
+<span class="k">beta</span>    = VRF(alpha)
+<span class="k">chamber</span> = beta mod revolver size        (the first pull fires chamber 0)
+<span class="k">commit</span>  = SHA-256( decimal(chamber) || salt )</pre>
+        <pre class="block">zvm-bullet verify -record deployments/zvm.json &lt;endGame transaction hash&gt;</pre>
+        <p class="note">
+          ECVRF-EDWARDS25519-SHA512-TAI (RFC 9381). The commitment fixes the chamber once play starts; it cannot stop the bot, which
+          picks the moment in <code>alpha</code>, from trying moments first. That is why the bot's own wallets may never play.
+        </p>
+      </section>
+
+      <section class="card" id="addresses">
+        <h2>Addresses</h2>
+        <dl class="rows addr">
+          <div><dt>BULLET token</dt><dd><a class="mono" href="{{tokenWrite}}">{{token}}</a></dd></div>
+          <div><dt>Escrow</dt><dd><a class="mono" href="{{gw}}/explorer/address/{{escrow}}?tab=contract">{{escrow}}</a></dd></div>
+          <div><dt>BULLET / wZNN pool</dt><dd><a class="mono" href="{{gw}}/glyphswap/pool/{{pair}}">{{pair}}</a></dd></div>
+          <div><dt>Bot</dt><dd><a class="mono" href="{{gw}}/explorer/address/{{botWallet}}">{{botWallet}}</a></dd></div>
+          <div><dt>Revenue share</dt><dd><a class="mono" href="{{gw}}/explorer/address/{{revenue}}">{{revenue}}</a></dd></div>
+          <div><dt>Marketing</dt><dd><a class="mono" href="{{gw}}/explorer/address/{{marketing}}">{{marketing}}</a></dd></div>
+          <div><dt>VRF public key</dt><dd><span class="mono">{{vrfPublicKey}}</span></dd></div>
+        </dl>
+        <p class="note">
+          The escrow is mainnet's <a href="https://etherscan.io/address/0x4d2E8a0ebC4BB3BE7F3d65426F6a0C5836635DBE">TelegramRussianRoulette</a>
+          byte for byte. The token is mainnet's <a href="https://etherscan.io/address/0x8ef32a03784c8Fd63bBf027251b9620865bD54B6">BulletGame</a>
+          with one change: on this chain it routes through Glyphswap, and ETH is ZNN. Both are verified on the explorer.
+        </p>
+      </section>
+    </main>
+
+    <footer class="wrap foot">
+      Devnet: BULLET here has no value. <a href="{{gw}}/explorer/">Explorer</a> · <a href="{{gw}}/status/">Status</a> ·
+      <a href="https://bullet-game.gitbook.io/bullet-game">The original game</a>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

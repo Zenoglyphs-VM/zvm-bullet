@@ -1,0 +1,19 @@
+{
+  "name": "zvm-bullet-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bullet Game's documentation page: the rules, the tokenomics, the fairness proof and the addresses on the ZVM.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.2.5",
+    "@fontsource-variable/space-grotesk": "^5.2.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^7.3.1"
+  }
+}

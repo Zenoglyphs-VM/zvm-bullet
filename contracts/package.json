@@ -1,0 +1,12 @@
+{
+  "name": "zvm-bullet-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check:mainnet": "node scripts/check-mainnet.mjs"
+  },
+  "devDependencies": {
+    "solc": "0.8.19"
+  }
+}

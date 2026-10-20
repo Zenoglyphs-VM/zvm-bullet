@@ -1,0 +1,73 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. In-progress runs finish rather than being cancelled, so
+# a half-published site is never left live.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      # The rest of the page's settings (the bot's name, the tokens it knows)
+      # are in .env.example; the endpoints below override its copies.
+      - run: cp ../.env.example ../.env
+
+      - name: Deployment record
+        # deployments/ is kept out of git, as every devnet deploys its own, so
+        # this site's record comes from the organisation's Actions variables.
+        # Without one the page builds and says it is not deployed.
+        env:
+          RECORD: ${{ vars.BULLET_DEPLOYMENT }}
+        run: |
+          if [ -n "$RECORD" ]; then
+            mkdir -p "$GITHUB_WORKSPACE/deployments"
+            printf '%s\n' "$RECORD" > "$GITHUB_WORKSPACE/deployments/zvm.json"
+          fi
+
+      - name: Build
+        # The node and the origin the other apps are under come from the
+        # organisation's Actions variables, so every site is repointed in one
+        # place and none is written into the source.
+        env:
+          VITE_ZVM_NODE: ${{ vars.ZVM_NODE }}
+          VITE_GATEWAY: ${{ vars.ZVM_GATEWAY }}
+        run: BASE_PATH="/${GITHUB_REPOSITORY#*/}/" npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
