@@ -34,12 +34,13 @@ jobs:
             contracts/package-lock.json
             contracts/test/package-lock.json
       - name: Install locked contract test dependencies
-        run: npm ci --prefix contracts/test --ignore-scripts
+        run: |
+          npm ci --prefix contracts --ignore-scripts
+          npm ci --prefix contracts/test --ignore-scripts
       - name: Exercise current contract behavior
         run: npm test --prefix contracts/test
       - name: Rebuild and check the recorded production artifacts
         run: |
-          npm ci --prefix contracts --ignore-scripts
           npm run build --prefix contracts
           npm run check:mainnet --prefix contracts
           git diff --exit-code -- internal/contracts/artifacts

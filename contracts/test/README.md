@@ -1,7 +1,9 @@
 # Isolated contract behavior
 
-With Node 22 or later, run `npm ci && npm test` in this directory. The independent
-lock leaves the production compiler and web dependency graphs unchanged.
+With Node 22 or later, run `npm ci --prefix .. && npm ci && npm test` in this
+directory. The production helper resolves `solc` from the parent, so both locks
+must be installed before tests. The independent test lock leaves the production
+compiler and web dependency graphs unchanged.
 
 The suite uses the actual production compiler helper: Solidity 0.8.19, Paris,
 optimizer 1,000,000. Both complete Go-embedded artifacts must match fresh current
