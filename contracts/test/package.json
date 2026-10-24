@@ -1,0 +1,19 @@
+{
+  "name": "zvm-bullet-contract-tests",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 behavior.test.mjs"
+  },
+  "devDependencies": {
+    "@ethereumjs/block": "10.1.3",
+    "@ethereumjs/common": "10.1.3",
+    "@ethereumjs/util": "10.1.3",
+    "@ethereumjs/vm": "10.1.3",
+    "solc": "0.8.19",
+    "viem": "2.57.1"
+  }
+}

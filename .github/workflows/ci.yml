@@ -20,7 +20,29 @@ jobs:
 
       - run: go build ./...
       - run: go vet ./...
-      - run: go test ./...
+      - run: go test -count=1 -v ./...
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            contracts/package-lock.json
+            contracts/test/package-lock.json
+      - name: Install locked contract test dependencies
+        run: npm ci --prefix contracts/test --ignore-scripts
+      - name: Exercise current contract behavior
+        run: npm test --prefix contracts/test
+      - name: Rebuild and check the recorded production artifacts
+        run: |
+          npm ci --prefix contracts --ignore-scripts
+          npm run build --prefix contracts
+          npm run check:mainnet --prefix contracts
+          git diff --exit-code -- internal/contracts/artifacts
 
   web:
     runs-on: ubuntu-latest
