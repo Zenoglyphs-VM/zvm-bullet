@@ -255,9 +255,8 @@ func (m *Manager) leaderboard(chat int64) {
 }
 
 // Recover settles what a previous run left behind. A table in play cannot be
-// resumed honestly (its turn clock is gone), so a game the escrow holds is
-// aborted and refunded, as mainnet's operator did after a crash, and one it
-// does not hold is cancelled.
+// resumed honestly because its turn clock is gone. Uncertain prior outcomes
+// remain unfinished and stop startup until the operator reconciles them.
 func (m *Manager) Recover() error {
 	left, err := m.cfg.Store.Unfinished(m.ctx)
 	if err != nil {
@@ -265,24 +264,29 @@ func (m *Manager) Recover() error {
 	}
 	for _, g := range left {
 		now := m.cfg.Now()
-		in := false
-		if g.State != "joining" {
-			if in, err = m.cfg.Chain.InProgress(m.ctx, g.Chat); err != nil {
-				return err
+		if g.State == "joining" {
+			if err := m.cfg.Store.Cancelled(m.ctx, g.ID, "the bot restarted before the game started", now); err != nil {
+				return fmt.Errorf("recording restart cancellation for game %d: %w", g.ID, err)
 			}
-		}
-		if !in {
-			_ = m.cfg.Store.Cancelled(m.ctx, g.ID, "the bot restarted before the game started", now)
 			m.say(g.Chat, fmt.Sprintf("The bot restarted, so game #%d is cancelled. No bets were collected.", g.ID))
 			continue
+		}
+		in, err := m.cfg.Chain.InProgress(m.ctx, g.Chat)
+		if err != nil {
+			return fmt.Errorf("reading restart escrow for game %d: %w", g.ID, err)
+		}
+		if !in {
+			return fmt.Errorf("game %d remains %s but the current escrow is inactive; reconcile its original transaction outcome before restarting", g.ID, g.State)
 		}
 		tx, err := m.cfg.Chain.AbortGame(m.ctx, g.Chat)
 		if err != nil {
 			m.cfg.Log.Error("recover: abortGame", "game", g.ID, "chat", g.Chat, "err", err)
-			m.say(g.Chat, fmt.Sprintf("The bot restarted during game #%d and could not refund it yet (%s). An admin can /abort it.", g.ID, esc(err.Error())))
-			continue
+			m.say(g.Chat, fmt.Sprintf("The bot restarted during game #%d and could not confirm its refund. Recovery has stopped and requires operator reconciliation.", g.ID))
+			return fmt.Errorf("refunding restart game %d: %w", g.ID, err)
 		}
-		_ = m.cfg.Store.Aborted(m.ctx, g.ID, tx.Hex(), "the bot restarted during the game", now)
+		if err := m.cfg.Store.Aborted(m.ctx, g.ID, tx.Hex(), "the bot restarted during the game", now); err != nil {
+			return fmt.Errorf("recording restart refund for game %d, transaction %s: %w", g.ID, tx.Hex(), err)
+		}
 		m.say(g.Chat, fmt.Sprintf("The bot restarted during game #%d, so it is aborted and every stake refunded: %s", g.ID, m.cfg.Links.Tx(tx)))
 	}
 	return nil

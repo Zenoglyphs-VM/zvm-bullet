@@ -69,6 +69,12 @@
         </ul>
       </section>
 
+      <section class="card" id="approval-authority">
+        <h2>Approval and operator authority</h2>
+        <p><code>connectAndApprove</code> gives the escrow an unlimited BULLET allowance. Its owner can collect approved BULLET from connected wallets.</p>
+        <p>A separately confirmed finite <code>approve</code> limits the allowance from that point. A later connection grants unlimited approval again. Wallet funding and allowance are separate exposure limits; the bot does not enforce an on-chain per-game authorization from each player.</p>
+      </section>
+
       <section class="card" id="tokenomics">
         <h2>Tokenomics</h2>
         <div class="split">
@@ -129,7 +135,7 @@
         </dl>
         <p class="note">
           The escrow is mainnet's <a href="https://etherscan.io/address/0x4d2E8a0ebC4BB3BE7F3d65426F6a0C5836635DBE">TelegramRussianRoulette</a>
-          byte for byte. The token is mainnet's <a href="https://etherscan.io/address/0x8ef32a03784c8Fd63bBf027251b9620865bD54B6">BulletGame</a>
+          in executable bytecode, excluding terminal compiler metadata hashes. This compares the recorded sources and artifacts. The token is mainnet's <a href="https://etherscan.io/address/0x8ef32a03784c8Fd63bBf027251b9620865bD54B6">BulletGame</a>
           with one change: on this chain it routes through Glyphswap, and ETH is ZNN. Both are verified on the explorer.
         </p>
       </section>
